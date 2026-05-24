@@ -273,14 +273,16 @@ ACCESS DENIED
 
         <div class="input-area">
           <input
-            type="text"
-            id="prompt"
-            placeholder="Digite um comando..."
-          />
+type="text"
+id="prompt"
+placeholder="Digite um comando..."
+/>
 
-          <button onclick="sendMessage()">
-            SEND
-          </button>
+<button onclick="startVoiceInput()">🎤</button>
+
+<button onclick="sendMessage()">
+SEND
+</button>
         </div>
 
       </div>
