@@ -23,7 +23,7 @@ app.post("/atlas-ai", async (req, res) => {
     const { prompt } = req.body;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5.5",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
