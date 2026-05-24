@@ -336,33 +336,52 @@ console.log(event.error);
 }
 
 async function loginAtlas() {
+  const passwordInput =
+  document.getElementById("atlasPassword");
 
-const password =
-document.getElementById("atlasPassword").value;
+  const loginError =
+  document.getElementById("loginError");
 
-const response = await fetch("/atlas-login", {
-method: "POST",
-headers: {
-"Content-Type": "application/json"
-},
-body: JSON.stringify({
-password
-})
+  const password =
+  passwordInput.value.trim();
+
+  loginError.style.display = "none";
+  loginError.innerText = "";
+
+  const response = await fetch("/atlas-login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      password
+    })
+  });
+
+  if (response.ok) {
+
+    document.getElementById("loginScreen")
+    .style.display = "none";
+
+  } else {
+
+    loginError.innerText =
+    "ACCESS DENIED";
+
+    loginError.style.display =
+    "block";
+  }
+}
+
+document.getElementById("atlasPassword")
+.addEventListener("keydown",
+function(event) {
+
+  if (event.key === "Enter") {
+    loginAtlas();
+  }
+
 });
-
-if (response.ok) {
-
-document.getElementById("loginScreen")
-.style.display = "none";
-
-} else {
-
-document.getElementById("loginError")
-.innerText = "ACCESS DENIED";
-
-}
-
-}
 
         async function sendMessage(){
 
