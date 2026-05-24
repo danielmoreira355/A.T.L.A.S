@@ -16,59 +16,165 @@ const openai = new OpenAI({
 
 app.get("/", (req, res) => {
   res.send(`
-    <html>
-      <head>
-        <title>A.T.L.A.S</title>
-        <style>
-          body {
-            background: #0b1020;
-            color: #00ffd5;
-            font-family: Arial;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-          }
+  <html>
+    <head>
+      <title>A.T.L.A.S</title>
 
-          .panel {
-            text-align: center;
-            padding: 40px;
-            border: 2px solid #00ffd5;
-            border-radius: 20px;
-            box-shadow: 0 0 30px #00ffd5;
-            background: #11182d;
-          }
+      <style>
+        body{
+          background:#0b1020;
+          color:#00ffd5;
+          font-family:Arial;
+          margin:0;
+          height:100vh;
+          display:flex;
+          justify-content:center;
+          align-items:center;
+        }
 
-          h1 {
-            font-size: 50px;
-            margin-bottom: 10px;
-          }
+        .container{
+          width:700px;
+          background:#11182d;
+          border:2px solid #00ffd5;
+          border-radius:25px;
+          padding:30px;
+          box-shadow:0 0 40px #00ffd5;
+        }
 
-          p {
-            font-size: 20px;
-            color: white;
-          }
+        h1{
+          text-align:center;
+          font-size:50px;
+          margin-bottom:10px;
+        }
 
-          .status {
-            margin-top: 20px;
-            color: lime;
-            font-weight: bold;
-          }
-        </style>
-      </head>
+        .subtitle{
+          text-align:center;
+          color:white;
+          margin-bottom:25px;
+        }
 
-      <body>
-        <div class="panel">
-          <h1>A.T.L.A.S</h1>
-          <p>Advanced Tactical Logistic Artificial System</p>
+        #chat{
+          height:300px;
+          overflow-y:auto;
+          background:#0d1425;
+          border-radius:15px;
+          padding:15px;
+          margin-bottom:20px;
+          color:white;
+        }
 
-          <div class="status">
-            ● CENTRAL INTELLIGENCE ONLINE
+        .message{
+          margin-bottom:15px;
+        }
+
+        .user{
+          color:#00ffd5;
+        }
+
+        .atlas{
+          color:#ffffff;
+        }
+
+        .input-area{
+          display:flex;
+          gap:10px;
+        }
+
+        input{
+          flex:1;
+          padding:15px;
+          border:none;
+          border-radius:12px;
+          background:#0d1425;
+          color:white;
+          font-size:16px;
+        }
+
+        button{
+          padding:15px 25px;
+          border:none;
+          border-radius:12px;
+          background:#00ffd5;
+          color:black;
+          font-weight:bold;
+          cursor:pointer;
+        }
+
+        button:hover{
+          opacity:0.8;
+        }
+      </style>
+    </head>
+
+    <body>
+
+      <div class="container">
+
+        <h1>A.T.L.A.S</h1>
+
+        <div class="subtitle">
+          Advanced Tactical Logistic Artificial System
+        </div>
+
+        <div id="chat">
+          <div class="message atlas">
+            ⚡ A.T.L.A.S CENTRAL INTELLIGENCE ONLINE
           </div>
         </div>
-      </body>
-    </html>
+
+        <div class="input-area">
+          <input
+            type="text"
+            id="prompt"
+            placeholder="Digite um comando..."
+          />
+
+          <button onclick="sendMessage()">
+            SEND
+          </button>
+        </div>
+
+      </div>
+
+      <script>
+
+        async function sendMessage(){
+
+          const input = document.getElementById("prompt");
+
+          const chat = document.getElementById("chat");
+
+          const prompt = input.value;
+
+          if(!prompt) return;
+
+          chat.innerHTML +=
+          '<div class="message user">🧑 Você: ' + prompt + '</div>';
+
+          input.value = "";
+
+          const response = await fetch("/atlas-ai",{
+            method:"POST",
+            headers:{
+              "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+              prompt:prompt
+            })
+          });
+
+          const data = await response.json();
+
+          chat.innerHTML +=
+          '<div class="message atlas">🤖 A.T.L.A.S: ' + data.response + '</div>';
+
+          chat.scrollTop = chat.scrollHeight;
+        }
+
+      </script>
+
+    </body>
+  </html>
   `);
 });
 
