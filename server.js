@@ -49,24 +49,35 @@ app.get("/", (req, res) => {
 
       <style>
         body{
-          background:#0b1020;
-          color:#00ffd5;
-          font-family:Arial;
-          margin:0;
-          height:100vh;
-          display:flex;
-          justify-content:center;
-          align-items:center;
-        }
+background:
+radial-gradient(circle at top, rgba(0,255,200,0.08), transparent 35%),
+linear-gradient(135deg,#050816,#0b1020,#050816);
+color:#00ffd5;
+font-family:Arial;
+margin:0;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+overflow:hidden;
+position:relative;
+}
 
         .container{
-          width:700px;
-          background:#11182d;
-          border:2px solid #00ffd5;
-          border-radius:25px;
-          padding:30px;
-          box-shadow:0 0 40px #00ffd5;
-        }
+width:760px;
+background:rgba(12,18,35,0.88);
+border:1px solid rgba(0,255,200,0.25);
+border-radius:30px;
+padding:30px;
+backdrop-filter:blur(20px);
+
+box-shadow:
+0 0 25px rgba(0,255,200,0.18),
+0 0 60px rgba(0,150,255,0.12);
+
+position:relative;
+overflow:hidden;
+}
 
         h1{
           text-align:center;
