@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 app.post("/atlas-login", (req, res) => {
   const { password } = req.body;
-if ((password || "").trim() === (process.env.ATLAS_PASSWORD || "").trim()) {
+if ((password || "").trim() === "123") {
     return res.json({
       success: true,
       message: "A.T.L.A.S access granted."
