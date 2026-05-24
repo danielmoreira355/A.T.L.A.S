@@ -8,6 +8,21 @@ const app = express();
 app.use(cors());
 
 app.use(express.json());
+app.post("/atlas-login", (req, res) => {
+  const { password } = req.body;
+
+  if (password === process.env.ATLAS_PASSWORD) {
+    return res.json({
+      success: true,
+      message: "A.T.L.A.S access granted."
+    });
+  }
+
+  return res.status(401).json({
+    success: false,
+    message: "Access denied."
+  });
+});
 
 const PORT = process.env.PORT || 3000;
 
