@@ -307,6 +307,35 @@ function speakAtlas(text) {
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(voice);
 }
+function startVoiceInput() {
+
+const recognition =
+new(window.SpeechRecognition ||
+window.webkitSpeechRecognition)();
+
+recognition.lang = "pt-BR";
+
+recognition.start();
+
+recognition.onresult = function(event) {
+
+const voiceText =
+event.results[0][0].transcript;
+
+document.getElementById("prompt").value =
+voiceText;
+
+sendMessage();
+
+};
+
+recognition.onerror = function(event) {
+
+console.log(event.error);
+
+};
+
+}
 
 async function loginAtlas() {
 
