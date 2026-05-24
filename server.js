@@ -173,7 +173,11 @@ app.get("/", (req, res) => {
 '<div class="message atlas">🤖 A.T.L.A.S: ' + (data.response || data.error || "AI Core aguardando créditos da OpenAI API.") + '</div>';
           chat.scrollTop = chat.scrollHeight;
         }
-
+document.getElementById("prompt").addEventListener("keydown", function(event) {
+  if (event.key === "Enter") {
+    sendMessage();
+  }
+});
       </script>
 
     </body>
