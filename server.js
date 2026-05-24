@@ -170,8 +170,7 @@ app.get("/", (req, res) => {
           const data = await response.json();
 
           chat.innerHTML +=
-          '<div class="message atlas">🤖 A.T.L.A.S: ' + data.response + '</div>';
-
+'<div class="message atlas">🤖 A.T.L.A.S: ' + (data.response || data.error || "AI Core aguardando créditos da OpenAI API.") + '</div>';
           chat.scrollTop = chat.scrollHeight;
         }
 
