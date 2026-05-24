@@ -286,7 +286,27 @@ ACCESS DENIED
       </div>
 
       <script>
-      async function loginAtlas() {
+
+function speakAtlas(text) {
+  if (!text) return;
+
+  const cleanText = text
+    .replace(/<[^>]*>/g, "")
+    .replace(/\*/g, "")
+    .replace(/[#_`]/g, "");
+
+  const voice = new SpeechSynthesisUtterance(cleanText);
+
+  voice.lang = "pt-BR";
+  voice.rate = 1;
+  voice.pitch = 0.9;
+  voice.volume = 1;
+
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(voice);
+}
+
+async function loginAtlas() {
 
 const password =
 document.getElementById("atlasPassword").value;
@@ -345,6 +365,7 @@ document.getElementById("loginError")
           chat.innerHTML +=
 '<div class="message atlas">🤖 A.T.L.A.S: ' + (data.response || data.error || "AI Core aguardando créditos da OpenAI API.") + '</div>';
           chat.scrollTop = chat.scrollHeight;
+          speakAtlas(data.response);
         }
 document.getElementById("prompt").addEventListener("keydown", function(event) {
   if (event.key === "Enter") {
