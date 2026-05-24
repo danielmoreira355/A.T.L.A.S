@@ -249,10 +249,22 @@ REGRAS DE COMUNICAÇÃO:
       ],
     });
 
-    res.json({
-      success: true,
-      response: response.choices[0].message.content,
-    });
+const atlasReply = response.choices[0].message.content;
+
+conversationMemory.push(
+  { role: "user", content: prompt },
+  { role: "assistant", content: atlasReply }
+);
+
+fs.writeFileSync(
+  "./atlas-conversation-memory.json",
+  JSON.stringify(conversationMemory, null, 2)
+);
+
+res.json({
+  success: true,
+  response: atlasReply,
+});
   } catch (error) {
     console.error(error);
 
