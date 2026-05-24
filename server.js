@@ -240,7 +240,6 @@ letter-spacing:1px;
 box-shadow:
 0 0 20px rgba(0,255,200,0.28);
 transition:0.3s;
-"
 >
 ACCESS A.T.L.A.S
 </button>
