@@ -15,10 +15,61 @@ const openai = new OpenAI({
 });
 
 app.get("/", (req, res) => {
-  res.json({
-    status: "A.T.L.A.S ONLINE",
-    message: "A.T.L.A.S central intelligence online.",
-  });
+  res.send(`
+    <html>
+      <head>
+        <title>A.T.L.A.S</title>
+        <style>
+          body {
+            background: #0b1020;
+            color: #00ffd5;
+            font-family: Arial;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+          }
+
+          .panel {
+            text-align: center;
+            padding: 40px;
+            border: 2px solid #00ffd5;
+            border-radius: 20px;
+            box-shadow: 0 0 30px #00ffd5;
+            background: #11182d;
+          }
+
+          h1 {
+            font-size: 50px;
+            margin-bottom: 10px;
+          }
+
+          p {
+            font-size: 20px;
+            color: white;
+          }
+
+          .status {
+            margin-top: 20px;
+            color: lime;
+            font-weight: bold;
+          }
+        </style>
+      </head>
+
+      <body>
+        <div class="panel">
+          <h1>A.T.L.A.S</h1>
+          <p>Advanced Tactical Logistic Artificial System</p>
+
+          <div class="status">
+            ● CENTRAL INTELLIGENCE ONLINE
+          </div>
+        </div>
+      </body>
+    </html>
+  `);
 });
 
 app.post("/atlas-ai", async (req, res) => {
