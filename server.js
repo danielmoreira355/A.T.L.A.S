@@ -17,7 +17,15 @@ const openai = new OpenAI({
 const atlasMemory = JSON.parse(
   fs.readFileSync("./atlas-memory.json", "utf8")
 );
+let conversationMemory = [];
 
+try {
+  conversationMemory = JSON.parse(
+    fs.readFileSync("./atlas-conversation-memory.json", "utf8")
+  );
+} catch {
+  conversationMemory = [];
+}
 app.get("/", (req, res) => {
   res.send(`
   <html>
@@ -188,6 +196,7 @@ document.getElementById("prompt").addEventListener("keydown", function(event) {
 app.post("/atlas-ai", async (req, res) => {
   try {
     const { prompt } = req.body;
+    const recentMemory = conversationMemory.slice(-20);
 
     const response = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
@@ -232,10 +241,11 @@ REGRAS DE COMUNICAÇÃO:
 - Priorize resposta útil, simples e prática.
 `
         },
-        {
-          role: "user",
-          content: prompt,
-        },
+        ...recentMemory,
+{
+    role: "user",
+    content: prompt,
+},
       ],
     });
 
