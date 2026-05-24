@@ -134,6 +134,55 @@ app.get("/", (req, res) => {
     </head>
 
     <body>
+    <div id="loginScreen" style="
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:#0b1020;
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:9999;
+flex-direction:column;
+">
+
+<h1 style="color:#00ffd5;font-size:50px;">
+A.T.L.A.S ACCESS
+</h1>
+
+<input
+id="atlasPassword"
+type="password"
+placeholder="Enter password..."
+style="
+padding:15px;
+width:300px;
+border-radius:10px;
+border:none;
+margin-top:20px;
+font-size:18px;
+"
+/>
+
+<button
+onclick="loginAtlas()"
+style="
+margin-top:20px;
+padding:15px 30px;
+border:none;
+border-radius:10px;
+background:#00ffd5;
+font-size:18px;
+cursor:pointer;
+">
+ACCESS
+</button>
+
+<p id="loginError" style="color:red;margin-top:15px;"></p>
+
+</div>
 
       <div class="container">
 
@@ -164,6 +213,34 @@ app.get("/", (req, res) => {
       </div>
 
       <script>
+      async function loginAtlas() {
+
+const password =
+document.getElementById("atlasPassword").value;
+
+const response = await fetch("/atlas-login", {
+method: "POST",
+headers: {
+"Content-Type": "application/json"
+},
+body: JSON.stringify({
+password
+})
+});
+
+if (response.ok) {
+
+document.getElementById("loginScreen")
+.style.display = "none";
+
+} else {
+
+document.getElementById("loginError")
+.innerText = "ACCESS DENIED";
+
+}
+
+}
 
         async function sendMessage(){
 
