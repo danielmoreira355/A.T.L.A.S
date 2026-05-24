@@ -14,7 +14,7 @@ const openai = new OpenAI({
 app.get("/", (req, res) => {
   res.json({
     status: "A.T.L.A.S ONLINE",
-    message: "A.T.L.A.S central intelligence online."",
+    message: "A.T.L.A.S central intelligence online.",
   });
 });
 
