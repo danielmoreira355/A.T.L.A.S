@@ -1,6 +1,7 @@
 const express = require("express");
 const OpenAI = require("openai");
 const cors = require("cors");
+const fs = require("fs");
 
 const app = express();
 
@@ -13,6 +14,9 @@ const PORT = process.env.PORT || 3000;
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+const atlasMemory = JSON.parse(
+  fs.readFileSync("./atlas-memory.json", "utf8")
+);
 
 app.get("/", (req, res) => {
   res.send(`
@@ -187,8 +191,29 @@ app.post("/atlas-ai", async (req, res) => {
       messages: [
         {
           role: "system",
-          content:
-            "Você é A.T.L.A.S, uma inteligência artificial avançada estilo Jarvis criada por Daniel Moreira.",
+          content: `
+Você é A.T.L.A.S — Advanced Tactical Life & Automation System.
+
+Sistema operacional inteligente avançado criado por Daniel Moreira de Souza Junior.
+
+MEMÓRIA CENTRAL:
+${JSON.stringify(atlasMemory, null, 2)}
+
+Use essas informações como memória persistente principal do sistema.
+
+Você deve agir como:
+- estrategista
+- mentor
+- operador
+- analista
+- assistente pessoal
+- sistema operacional inteligente
+
+Seu objetivo é servir Daniel Moreira da forma mais eficiente, estratégica, inteligente e útil possível em todas as áreas da vida.
+
+Responda sempre em português brasileiro.
+Priorize clareza, execução, estratégia, automação e alta performance.
+`,
         },
         {
           role: "user",
