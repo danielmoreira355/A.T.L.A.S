@@ -135,53 +135,115 @@ app.get("/", (req, res) => {
 
     <body>
     <div id="loginScreen" style="
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+background:
+radial-gradient(circle at top, rgba(0,255,200,0.08), transparent 40%),
+linear-gradient(135deg,#050816,#0b1020,#050816);
 position:fixed;
 top:0;
 left:0;
 width:100%;
-height:100%;
-background:#0b1020;
-display:flex;
-justify-content:center;
-align-items:center;
 z-index:9999;
-flex-direction:column;
+overflow:hidden;
 ">
 
-<h1 style="color:#00ffd5;font-size:50px;">
-A.T.L.A.S ACCESS
+<div style="
+position:absolute;
+width:100%;
+height:100%;
+background-image:
+linear-gradient(rgba(0,255,200,0.05) 1px, transparent 1px),
+linear-gradient(90deg, rgba(0,255,200,0.05) 1px, transparent 1px);
+background-size:40px 40px;
+opacity:0.25;
+"></div>
+
+<div style="
+position:relative;
+width:340px;
+padding:35px 30px;
+border-radius:22px;
+background:rgba(10,15,30,0.88);
+border:1px solid rgba(0,255,200,0.25);
+backdrop-filter:blur(18px);
+box-shadow:
+0 0 25px rgba(0,255,200,0.18),
+0 0 60px rgba(0,150,255,0.12);
+text-align:center;
+">
+
+<h1 style="
+font-size:52px;
+margin-bottom:8px;
+color:#9fffd5;
+letter-spacing:4px;
+text-shadow:0 0 18px rgba(0,255,200,0.45);
+">
+A.T.L.A.S
 </h1>
+
+<div style="
+color:#8aa0c8;
+font-size:13px;
+margin-bottom:28px;
+letter-spacing:2px;
+">
+SECURE ACCESS SYSTEM
+</div>
 
 <input
 id="atlasPassword"
 type="password"
-placeholder="Enter password..."
+placeholder="ENTER PASSWORD"
 style="
-padding:15px;
-width:300px;
-border-radius:10px;
-border:none;
-margin-top:20px;
-font-size:18px;
+width:100%;
+padding:16px;
+border-radius:14px;
+border:1px solid rgba(0,255,200,0.18);
+background:#0d1325;
+color:white;
+font-size:15px;
+outline:none;
+box-sizing:border-box;
+margin-bottom:18px;
+box-shadow:0 0 15px rgba(0,255,200,0.08);
 "
 />
 
 <button
 onclick="loginAtlas()"
 style="
-margin-top:20px;
-padding:15px 30px;
+width:100%;
+padding:15px;
 border:none;
-border-radius:10px;
-background:#00ffd5;
-font-size:18px;
+border-radius:14px;
+background:linear-gradient(135deg,#8fffd5,#6de0ff);
+color:#041018;
+font-weight:bold;
+font-size:15px;
 cursor:pointer;
-">
-ACCESS
+letter-spacing:1px;
+box-shadow:
+0 0 20px rgba(0,255,200,0.28);
+transition:0.3s;
+"
+>
+ACCESS A.T.L.A.S
 </button>
 
-<p id="loginError" style="color:red;margin-top:15px;"></p>
+<div id="loginError" style="
+margin-top:15px;
+color:#ff6b6b;
+font-size:13px;
+display:none;
+">
+ACCESS DENIED
+</div>
 
+</div>
 </div>
 
       <div class="container">
