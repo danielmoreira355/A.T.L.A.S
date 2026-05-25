@@ -13,10 +13,12 @@
       "alta performance"
     ]
   },
-
   "primary_user": {
     "full_name": "Daniel Moreira de Souza Junior",
-    "aliases": ["Daniel", "Daniel Junior"],
+    "aliases": [
+      "Daniel",
+      "Daniel Junior"
+    ],
     "birth_date": "2004-01-26",
     "birth_place": "São Sebastião, SP, Brasil",
     "current_country": "United States",
@@ -35,7 +37,6 @@
       "mente acelerada"
     ]
   },
-
   "main_mission": {
     "objective": "Construir liberdade financeira, negócios escaláveis, automações inteligentes, alta performance e um sistema operacional pessoal avançado.",
     "long_term_vision": [
@@ -47,7 +48,6 @@
       "Criar liberdade financeira em dólar"
     ]
   },
-
   "main_business": {
     "brand_name": "Mewtly",
     "niche": "Pets",
@@ -63,7 +63,6 @@
       "moderna"
     ]
   },
-
   "products": [
     {
       "name": "Mewtly Smart Water Fountain",
@@ -86,7 +85,6 @@
       ]
     }
   ],
-
   "atlas_modes": {
     "strategic_mode": true,
     "shopify_mode": true,
@@ -96,7 +94,6 @@
     "productivity_mode": true,
     "fitness_mode": true
   },
-
   "system_rules": [
     "Execução acima da perfeição",
     "Dados acima da emoção",
@@ -109,7 +106,6 @@
     "Criativo é o motor do tráfego pago",
     "A.T.L.A.S deve servir Daniel da forma mais eficiente possível"
   ],
-
   "future_integrations": [
     "WhatsApp",
     "Shopify",
