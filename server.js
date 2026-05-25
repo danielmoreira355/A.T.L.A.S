@@ -287,13 +287,21 @@ function speakAtlas(text) {
 
   const voice = new SpeechSynthesisUtterance(cleanText);
 
-  voice.lang = "pt-BR";
- voice.rate = 1.25;
-voice.pitch = 1.05;
-  voice.volume = 1;
+const voices = window.speechSynthesis.getVoices();
 
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(voice);
+voice.voice =
+voices.find(v =>
+v.lang.includes("pt") &&
+v.name.toLowerCase().includes("google")
+) || voices[0];
+
+voice.lang = "pt-BR";
+voice.rate = 1.45;
+voice.pitch = 1;
+voice.volume = 1;
+
+window.speechSynthesis.cancel();
+window.speechSynthesis.speak(voice);
 }
 function startVoiceInput() {
 
