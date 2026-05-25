@@ -319,8 +319,9 @@ parts.forEach(part => {
   speech.voice = voice.voice;
   speech.lang = "pt-BR";
   speech.rate = 1.22;
-  speech.pitch = 1;
+  speech.pitch = 0.92;
   speech.volume = 1;
+  speech.voiceURI = "Google português do Brasil";
 
   window.speechSynthesis.speak(speech);
 });
