@@ -283,10 +283,7 @@ SEND
 function speakAtlas(text) {
   if (!text) return;
 
-  const cleanText = text
-    .replace(/<[^>]*>/g, "")
-    .replace(/\*/g, "")
-    .replace(/[#_]/g, "");
+  const cleanText = String(text);
 
   const voice = new SpeechSynthesisUtterance(cleanText);
 
