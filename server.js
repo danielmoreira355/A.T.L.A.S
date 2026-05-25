@@ -400,9 +400,15 @@ function(event) {
 
           const data = await response.json();
 
-          chat.innerHTML +=
-'<div class="message atlas">🤖 A.T.L.A.S: ' + (data.response || data.error || "AI Core aguardando créditos da OpenAI API.") + '</div>';
-          chat.scrollTop = chat.scrollHeight;
+          const atlasText =
+data.response || data.error || "AI Core aguardando créditos da OpenAI API.";
+
+chat.innerHTML +=
+'<div class="message atlas">🤖 A.T.L.A.S: ' + atlasText + '</div>';
+
+chat.scrollTop = chat.scrollHeight;
+
+speakAtlas(atlasText);
         }
 document.getElementById("prompt").addEventListener("keydown", function(event) {
   if (event.key === "Enter") {
