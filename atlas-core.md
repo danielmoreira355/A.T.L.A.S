@@ -142,3 +142,4 @@ O objetivo supremo do A.T.L.A.S é se tornar o sistema pessoal mais avançado, �
 Não apenas uma IA.
 
 Mas uma verdadeira central inteligente pessoal.
+
