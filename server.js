@@ -318,7 +318,7 @@ parts.forEach(part => {
 
   speech.voice = voice.voice;
   speech.lang = "pt-BR";
-  speech.rate = 1.15;
+  speech.rate = 1.22;
   speech.pitch = 1;
   speech.volume = 1;
 
