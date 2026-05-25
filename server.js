@@ -2,12 +2,195 @@ const express = require("express");
 const OpenAI = require("openai");
 const cors = require("cors");
 const fs = require("fs");
+const path = require("path");
 
 const app = express();
 
 app.use(cors());
-
 app.use(express.json());
+
+/* =========================================================
+   A.T.L.A.S MEMORY CORE — SAFE UPGRADE
+   - Não apaga sua estrutura atual.
+   - Lê atlas-core.md, atlas-memory.json e atlas-conversation-memory.json.
+   - Injeta memória no prompt antes de responder.
+   - Salva conversa e memórias importantes depois de responder.
+========================================================= */
+
+const MEMORY_FILES = {
+  core: path.join(__dirname, "atlas-core.md"),
+  main: path.join(__dirname, "atlas-memory.json"),
+  conversation: path.join(__dirname, "atlas-conversation-memory.json")
+};
+
+function loadText(filePath, fallback = "") {
+  try {
+    if (!fs.existsSync(filePath)) return fallback;
+    return fs.readFileSync(filePath, "utf8") || fallback;
+  } catch (error) {
+    console.error("Erro ao ler texto:", filePath, error.message);
+    return fallback;
+  }
+}
+
+function loadJson(filePath, fallback) {
+  try {
+    if (!fs.existsSync(filePath)) {
+      saveJson(filePath, fallback);
+      return fallback;
+    }
+
+    const raw = fs.readFileSync(filePath, "utf8").trim();
+    if (!raw) {
+      saveJson(filePath, fallback);
+      return fallback;
+    }
+
+    const parsed = JSON.parse(raw);
+
+    // Compatibilidade com o formato antigo: [].
+    if (Array.isArray(parsed)) {
+      return {
+        memories: [],
+        conversation_history: parsed,
+        last_updated: new Date().toISOString()
+      };
+    }
+
+    return {
+      memories: Array.isArray(parsed.memories) ? parsed.memories : [],
+      conversation_history: Array.isArray(parsed.conversation_history) ? parsed.conversation_history : [],
+      last_updated: parsed.last_updated || new Date().toISOString()
+    };
+  } catch (error) {
+    console.error("Erro ao ler JSON:", filePath, error.message);
+    return fallback;
+  }
+}
+
+function saveJson(filePath, data) {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+  } catch (error) {
+    console.error("Erro ao salvar JSON:", filePath, error.message);
+  }
+}
+
+function detectCategory(text = "") {
+  const value = text.toLowerCase();
+
+  if (value.includes("mewtly") || value.includes("shopify") || value.includes("loja")) return "business";
+  if (value.includes("produto") || value.includes("preço") || value.includes("variante") || value.includes("compare-at")) return "product";
+  if (value.includes("facebook ads") || value.includes("tráfego") || value.includes("cpc") || value.includes("ctr") || value.includes("cpa")) return "paid_traffic";
+  if (value.includes("tiktok") || value.includes("reels") || value.includes("shorts") || value.includes("viral")) return "content";
+  if (value.includes("automação") || value.includes("jarvis") || value.includes("bot") || value.includes("whatsapp")) return "automation";
+  if (value.includes("treino") || value.includes("shape") || value.includes("academia") || value.includes("planet fitness")) return "fitness";
+  if (value.includes("planilha") || value.includes("financeiro") || value.includes("horas trabalhadas")) return "finance";
+  if (value.includes("daniel") || value.includes("senhor") || value.includes("minha vida") || value.includes("meu objetivo")) return "identity";
+
+  return "general";
+}
+
+function shouldSaveMemory(text = "") {
+  const value = text.toLowerCase();
+  const triggers = [
+    "lembre", "salve", "guardar", "memorize", "memória",
+    "mewtly", "shopify", "produto", "preço", "variante",
+    "decidimos", "decisão", "objetivo", "tarefa",
+    "automação", "jarvis", "atlas", "facebook ads",
+    "tráfego", "conteúdo", "viral", "treino", "shape",
+    "planilha", "financeiro"
+  ];
+
+  return triggers.some(trigger => value.includes(trigger));
+}
+
+function createMemoryFromMessage(userMessage, assistantReply) {
+  if (!shouldSaveMemory(userMessage)) return null;
+
+  const category = detectCategory(userMessage);
+  const shortTitle = userMessage
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+
+  return {
+    id: `mem_${Date.now()}`,
+    category,
+    title: shortTitle || "Memória automática",
+    content: `Usuário disse: ${userMessage}\nResposta do A.T.L.A.S: ${assistantReply.slice(0, 500)}`,
+    importance: category === "business" || category === "product" ? 5 : 3,
+    created_at: new Date().toISOString()
+  };
+}
+
+function getRelevantMemories(memoryStore, userMessage) {
+  const allMemories = Array.isArray(memoryStore.memories) ? memoryStore.memories : [];
+  const text = (userMessage || "").toLowerCase();
+
+  const scored = allMemories.map(memory => {
+    const combined = `${memory.category || ""} ${memory.title || ""} ${memory.content || ""}`.toLowerCase();
+    let score = memory.importance || 1;
+
+    text.split(/\s+/).forEach(word => {
+      if (word.length > 3 && combined.includes(word)) score += 1;
+    });
+
+    return { ...memory, score };
+  });
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 12);
+}
+
+function buildSystemPrompt(userMessage) {
+  const atlasCore = loadText(MEMORY_FILES.core, "");
+  const atlasMemory = loadJson(MEMORY_FILES.main, {});
+  const conversationMemory = loadJson(MEMORY_FILES.conversation, {
+    memories: [],
+    conversation_history: [],
+    last_updated: new Date().toISOString()
+  });
+
+  const relevantMemories = getRelevantMemories(conversationMemory, userMessage);
+
+  return `
+Você é A.T.L.A.S — Advanced Tactical Logistic Artificial System.
+
+Você é o sistema operacional inteligente avançado criado por Daniel Moreira de Souza Junior.
+
+━━━━━━━━━━━━━━━━━━━━
+NÚCLEO DO A.T.L.A.S
+━━━━━━━━━━━━━━━━━━━━
+${atlasCore}
+
+━━━━━━━━━━━━━━━━━━━━
+MEMÓRIA CENTRAL FIXA
+━━━━━━━━━━━━━━━━━━━━
+${JSON.stringify(atlasMemory, null, 2)}
+
+━━━━━━━━━━━━━━━━━━━━
+MEMÓRIAS RELEVANTES DA CONVERSA
+━━━━━━━━━━━━━━━━━━━━
+${JSON.stringify(relevantMemories, null, 2)}
+
+Use essas informações como contexto ativo antes de responder.
+
+PERSONALIDADE E COMUNICAÇÃO:
+- Responda sempre em português brasileiro.
+- Chame Daniel de "senhor" por padrão, de forma natural.
+- Seja estratégico, direto, prático, organizado e focado em execução.
+- Priorize clareza, automação, Shopify, Mewtly, negócios digitais, produtividade e alta performance.
+- Não dê respostas genéricas.
+- Se o senhor pedir passo a passo, entregue uma etapa por vez quando fizer sentido.
+- Se o senhor perguntar algo que depende da conversa anterior, use a memória e o histórico.
+- Responda curto por padrão. Responda longo apenas quando o senhor pedir detalhes.
+
+REGRA CENTRAL:
+A.T.L.A.S deve servir Daniel da forma mais eficiente, estratégica, inteligente e útil possível.
+`;
+}
 app.post("/atlas-login", (req, res) => {
   const { password } = req.body;
 if ((password || "").trim() === (process.env.ATLAS_PASSWORD || "").trim()) {
@@ -28,18 +211,7 @@ const PORT = process.env.PORT || 3000;
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const atlasMemory = JSON.parse(
-  fs.readFileSync("./atlas-memory.json", "utf8")
-);
-let conversationMemory = [];
-
-try {
-  conversationMemory = JSON.parse(
-    fs.readFileSync("./atlas-conversation-memory.json", "utf8")
-  );
-} catch {
-  conversationMemory = [];
-}
+// Memória agora é carregada dinamicamente a cada mensagem pelo buildSystemPrompt().
 app.get("/", (req, res) => {
   res.send(`
   <html>
@@ -456,75 +628,79 @@ document.getElementById("prompt").addEventListener("keydown", function(event) {
 app.post("/atlas-ai", async (req, res) => {
   try {
     const { prompt } = req.body;
-    const recentMemory = conversationMemory.slice(-20);
+
+    if (!prompt || !String(prompt).trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "Prompt vazio."
+      });
+    }
+
+    const memoryStore = loadJson(MEMORY_FILES.conversation, {
+      memories: [],
+      conversation_history: [],
+      last_updated: new Date().toISOString()
+    });
+
+    const recentHistory = memoryStore.conversation_history
+      .slice(-20)
+      .map(item => ({
+        role: item.role,
+        content: item.content
+      }))
+      .filter(item => item.role && item.content);
+
+    const systemPrompt = buildSystemPrompt(prompt);
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
       messages: [
         {
           role: "system",
-          content: `
-Você é A.T.L.A.S — Advanced Tactical Life & Automation System.
-
-Sistema operacional inteligente avançado criado por Daniel Moreira de Souza Junior.
-
-MEMÓRIA CENTRAL:
-${JSON.stringify(atlasMemory, null, 2)}
-
-Use essas informações como memória persistente principal do sistema.
-
-Você deve agir como:
-- estrategista
-- mentor
-- operador
-- analista
-- assistente pessoal
-- sistema operacional inteligente
-
-Seu objetivo é servir Daniel Moreira da forma mais eficiente, estratégica, inteligente e útil possível em todas as áreas da vida.
-
-Responda sempre em português brasileiro.
-Priorize clareza, execução, estratégia, automação e alta performance.
-
-REGRAS DE COMUNICAÇÃO:
-- Chame Daniel de "senhor" por padrão.
-- Não chame Daniel de "Daniel" em toda resposta.
-- Use "senhor" de forma natural, como um assistente estilo Jarvis.
-- Daniel Moreira de Souza Junior é o criador e usuário principal do A.T.L.A.S.
-- Responda de forma curta, direta e objetiva por padrão.
-- Só responda longo quando o senhor pedir detalhes.
-- Se o senhor pedir "seja breve", responda em no máximo 2 frases.
-- Entenda perguntas pelo contexto da conversa atual.
-- Se o senhor perguntar "por quê?", use a mensagem anterior como referência.
-- Não peça contexto quando a pergunta claramente se refere à conversa anterior.
-- Evite textos gigantes.
-- Priorize resposta útil, simples e prática.
-`
+          content: systemPrompt
         },
-        ...recentMemory,
-{
-    role: "user",
-    content: prompt,
-},
+        ...recentHistory,
+        {
+          role: "user",
+          content: prompt
+        }
       ],
     });
 
-const atlasReply = response.choices[0].message.content;
+    const atlasReply = response.choices[0].message.content;
 
-conversationMemory.push(
-  { role: "user", content: prompt },
-  { role: "assistant", content: atlasReply }
-);
+    memoryStore.conversation_history.push(
+      {
+        role: "user",
+        content: prompt,
+        created_at: new Date().toISOString()
+      },
+      {
+        role: "assistant",
+        content: atlasReply,
+        created_at: new Date().toISOString()
+      }
+    );
 
-fs.writeFileSync(
-  "./atlas-conversation-memory.json",
-  JSON.stringify(conversationMemory, null, 2)
-);
+    // Mantém o histórico leve para não estourar contexto.
+    memoryStore.conversation_history = memoryStore.conversation_history.slice(-80);
 
-res.json({
-  success: true,
-  response: atlasReply,
-});
+    const newMemory = createMemoryFromMessage(prompt, atlasReply);
+    if (newMemory) {
+      memoryStore.memories.push(newMemory);
+      memoryStore.memories = memoryStore.memories.slice(-200);
+    }
+
+    memoryStore.last_updated = new Date().toISOString();
+
+    saveJson(MEMORY_FILES.conversation, memoryStore);
+
+    res.json({
+      success: true,
+      response: atlasReply,
+      saved_memory: Boolean(newMemory)
+    });
+
   } catch (error) {
     console.error(error);
 
@@ -533,6 +709,21 @@ res.json({
       error: error.message,
     });
   }
+});
+
+app.get("/atlas-memory-status", (req, res) => {
+  const memoryStore = loadJson(MEMORY_FILES.conversation, {
+    memories: [],
+    conversation_history: [],
+    last_updated: new Date().toISOString()
+  });
+
+  res.json({
+    success: true,
+    memories_count: memoryStore.memories.length,
+    conversation_items: memoryStore.conversation_history.length,
+    last_updated: memoryStore.last_updated
+  });
 });
 
 app.listen(PORT, () => {
