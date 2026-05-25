@@ -288,8 +288,8 @@ function speakAtlas(text) {
   const voice = new SpeechSynthesisUtterance(cleanText);
 
   voice.lang = "pt-BR";
-  voice.rate = 1;
-  voice.pitch = 0.9;
+ voice.rate = 1.25;
+voice.pitch = 1.05;
   voice.volume = 1;
 
   window.speechSynthesis.cancel();
