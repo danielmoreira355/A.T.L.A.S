@@ -291,12 +291,19 @@ const voices = window.speechSynthesis.getVoices();
 
 voice.voice =
 voices.find(v =>
-v.lang.includes("pt") &&
-v.name.toLowerCase().includes("google")
-) || voices[0];
+  v.lang.includes("pt") &&
+  (
+    v.name.toLowerCase().includes("male") ||
+    v.name.toLowerCase().includes("masculino") ||
+    v.name.toLowerCase().includes("antonio") ||
+    v.name.toLowerCase().includes("daniel")
+  )
+) ||
+voices.find(v => v.lang.includes("pt")) ||
+voices[0];
 
 voice.lang = "pt-BR";
-voice.rate = 1.45;
+voice.rate = 1.18;
 voice.pitch = 1;
 voice.volume = 1;
 
