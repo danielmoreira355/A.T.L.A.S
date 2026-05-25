@@ -303,12 +303,27 @@ voices.find(v => v.lang.includes("pt")) ||
 voices[0];
 
 voice.lang = "pt-BR";
-voice.rate = 1.30;
+voice.rate = 1.39;
 voice.pitch = 1;
 voice.volume = 1;
 
+const parts = cleanText
+  .split(/(?<=[.!?])\s+/)
+  .filter(part => part.trim().length > 0);
+
 window.speechSynthesis.cancel();
-window.speechSynthesis.speak(voice);
+
+parts.forEach(part => {
+  const speech = new SpeechSynthesisUtterance(part);
+
+  speech.voice = voice.voice;
+  speech.lang = "pt-BR";
+  speech.rate = 1.15;
+  speech.pitch = 1;
+  speech.volume = 1;
+
+  window.speechSynthesis.speak(speech);
+});
 }
 function startVoiceInput() {
 
