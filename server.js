@@ -303,7 +303,7 @@ voices.find(v => v.lang.includes("pt")) ||
 voices[0];
 
 voice.lang = "pt-BR";
-voice.rate = 1.18;
+voice.rate = 1.30;
 voice.pitch = 1;
 voice.volume = 1;
 
