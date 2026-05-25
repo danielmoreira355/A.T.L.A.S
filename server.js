@@ -2,195 +2,12 @@ const express = require("express");
 const OpenAI = require("openai");
 const cors = require("cors");
 const fs = require("fs");
-const path = require("path");
 
 const app = express();
 
 app.use(cors());
+
 app.use(express.json());
-
-/* =========================================================
-   A.T.L.A.S MEMORY CORE — SAFE UPGRADE
-   - Não apaga sua estrutura atual.
-   - Lê atlas-core.md, atlas-memory.json e atlas-conversation-memory.json.
-   - Injeta memória no prompt antes de responder.
-   - Salva conversa e memórias importantes depois de responder.
-========================================================= */
-
-const MEMORY_FILES = {
-  core: path.join(__dirname, "atlas-core.md"),
-  main: path.join(__dirname, "atlas-memory.json"),
-  conversation: path.join(__dirname, "atlas-conversation-memory.json")
-};
-
-function loadText(filePath, fallback = "") {
-  try {
-    if (!fs.existsSync(filePath)) return fallback;
-    return fs.readFileSync(filePath, "utf8") || fallback;
-  } catch (error) {
-    console.error("Erro ao ler texto:", filePath, error.message);
-    return fallback;
-  }
-}
-
-function loadJson(filePath, fallback) {
-  try {
-    if (!fs.existsSync(filePath)) {
-      saveJson(filePath, fallback);
-      return fallback;
-    }
-
-    const raw = fs.readFileSync(filePath, "utf8").trim();
-    if (!raw) {
-      saveJson(filePath, fallback);
-      return fallback;
-    }
-
-    const parsed = JSON.parse(raw);
-
-    // Compatibilidade com o formato antigo: [].
-    if (Array.isArray(parsed)) {
-      return {
-        memories: [],
-        conversation_history: parsed,
-        last_updated: new Date().toISOString()
-      };
-    }
-
-    return {
-      memories: Array.isArray(parsed.memories) ? parsed.memories : [],
-      conversation_history: Array.isArray(parsed.conversation_history) ? parsed.conversation_history : [],
-      last_updated: parsed.last_updated || new Date().toISOString()
-    };
-  } catch (error) {
-    console.error("Erro ao ler JSON:", filePath, error.message);
-    return fallback;
-  }
-}
-
-function saveJson(filePath, data) {
-  try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
-  } catch (error) {
-    console.error("Erro ao salvar JSON:", filePath, error.message);
-  }
-}
-
-function detectCategory(text = "") {
-  const value = text.toLowerCase();
-
-  if (value.includes("mewtly") || value.includes("shopify") || value.includes("loja")) return "business";
-  if (value.includes("produto") || value.includes("preço") || value.includes("variante") || value.includes("compare-at")) return "product";
-  if (value.includes("facebook ads") || value.includes("tráfego") || value.includes("cpc") || value.includes("ctr") || value.includes("cpa")) return "paid_traffic";
-  if (value.includes("tiktok") || value.includes("reels") || value.includes("shorts") || value.includes("viral")) return "content";
-  if (value.includes("automação") || value.includes("jarvis") || value.includes("bot") || value.includes("whatsapp")) return "automation";
-  if (value.includes("treino") || value.includes("shape") || value.includes("academia") || value.includes("planet fitness")) return "fitness";
-  if (value.includes("planilha") || value.includes("financeiro") || value.includes("horas trabalhadas")) return "finance";
-  if (value.includes("daniel") || value.includes("senhor") || value.includes("minha vida") || value.includes("meu objetivo")) return "identity";
-
-  return "general";
-}
-
-function shouldSaveMemory(text = "") {
-  const value = text.toLowerCase();
-  const triggers = [
-    "lembre", "salve", "guardar", "memorize", "memória",
-    "mewtly", "shopify", "produto", "preço", "variante",
-    "decidimos", "decisão", "objetivo", "tarefa",
-    "automação", "jarvis", "atlas", "facebook ads",
-    "tráfego", "conteúdo", "viral", "treino", "shape",
-    "planilha", "financeiro"
-  ];
-
-  return triggers.some(trigger => value.includes(trigger));
-}
-
-function createMemoryFromMessage(userMessage, assistantReply) {
-  if (!shouldSaveMemory(userMessage)) return null;
-
-  const category = detectCategory(userMessage);
-  const shortTitle = userMessage
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 80);
-
-  return {
-    id: `mem_${Date.now()}`,
-    category,
-    title: shortTitle || "Memória automática",
-    content: `Usuário disse: ${userMessage}\nResposta do A.T.L.A.S: ${assistantReply.slice(0, 500)}`,
-    importance: category === "business" || category === "product" ? 5 : 3,
-    created_at: new Date().toISOString()
-  };
-}
-
-function getRelevantMemories(memoryStore, userMessage) {
-  const allMemories = Array.isArray(memoryStore.memories) ? memoryStore.memories : [];
-  const text = (userMessage || "").toLowerCase();
-
-  const scored = allMemories.map(memory => {
-    const combined = `${memory.category || ""} ${memory.title || ""} ${memory.content || ""}`.toLowerCase();
-    let score = memory.importance || 1;
-
-    text.split(/\s+/).forEach(word => {
-      if (word.length > 3 && combined.includes(word)) score += 1;
-    });
-
-    return { ...memory, score };
-  });
-
-  return scored
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 12);
-}
-
-function buildSystemPrompt(userMessage) {
-  const atlasCore = loadText(MEMORY_FILES.core, "");
-  const atlasMemory = loadJson(MEMORY_FILES.main, {});
-  const conversationMemory = loadJson(MEMORY_FILES.conversation, {
-    memories: [],
-    conversation_history: [],
-    last_updated: new Date().toISOString()
-  });
-
-  const relevantMemories = getRelevantMemories(conversationMemory, userMessage);
-
-  return `
-Você é A.T.L.A.S — Advanced Tactical Logistic Artificial System.
-
-Você é o sistema operacional inteligente avançado criado por Daniel Moreira de Souza Junior.
-
-━━━━━━━━━━━━━━━━━━━━
-NÚCLEO DO A.T.L.A.S
-━━━━━━━━━━━━━━━━━━━━
-${atlasCore}
-
-━━━━━━━━━━━━━━━━━━━━
-MEMÓRIA CENTRAL FIXA
-━━━━━━━━━━━━━━━━━━━━
-${JSON.stringify(atlasMemory, null, 2)}
-
-━━━━━━━━━━━━━━━━━━━━
-MEMÓRIAS RELEVANTES DA CONVERSA
-━━━━━━━━━━━━━━━━━━━━
-${JSON.stringify(relevantMemories, null, 2)}
-
-Use essas informações como contexto ativo antes de responder.
-
-PERSONALIDADE E COMUNICAÇÃO:
-- Responda sempre em português brasileiro.
-- Chame Daniel de "senhor" por padrão, de forma natural.
-- Seja estratégico, direto, prático, organizado e focado em execução.
-- Priorize clareza, automação, Shopify, Mewtly, negócios digitais, produtividade e alta performance.
-- Não dê respostas genéricas.
-- Se o senhor pedir passo a passo, entregue uma etapa por vez quando fizer sentido.
-- Se o senhor perguntar algo que depende da conversa anterior, use a memória e o histórico.
-- Responda curto por padrão. Responda longo apenas quando o senhor pedir detalhes.
-
-REGRA CENTRAL:
-A.T.L.A.S deve servir Daniel da forma mais eficiente, estratégica, inteligente e útil possível.
-`;
-}
 app.post("/atlas-login", (req, res) => {
   const { password } = req.body;
 if ((password || "").trim() === (process.env.ATLAS_PASSWORD || "").trim()) {
@@ -211,7 +28,214 @@ const PORT = process.env.PORT || 3000;
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-// Memória agora é carregada dinamicamente a cada mensagem pelo buildSystemPrompt().
+
+const path = require("path");
+
+const CORE_PATH = path.join(__dirname, "atlas-core.md");
+const MEMORY_PATH = path.join(__dirname, "atlas-memory.json");
+const CONVERSATION_MEMORY_PATH = path.join(__dirname, "atlas-conversation-memory.json");
+
+function loadText(filePath, fallback = "") {
+  try {
+    if (!fs.existsSync(filePath)) return fallback;
+    return fs.readFileSync(filePath, "utf8");
+  } catch (error) {
+    console.error("Erro ao ler texto:", filePath, error.message);
+    return fallback;
+  }
+}
+
+function loadJson(filePath, fallback) {
+  try {
+    if (!fs.existsSync(filePath)) return fallback;
+    const raw = fs.readFileSync(filePath, "utf8").trim();
+    if (!raw) return fallback;
+
+    const parsed = JSON.parse(raw);
+
+    // Compatibilidade: se o arquivo antigo era um array de mensagens,
+    // converte automaticamente para o formato novo.
+    if (Array.isArray(parsed)) {
+      return {
+        memories: [],
+        conversation_history: parsed
+      };
+    }
+
+    if (!parsed.memories) parsed.memories = [];
+    if (!parsed.conversation_history) parsed.conversation_history = [];
+
+    return parsed;
+  } catch (error) {
+    console.error("Erro ao ler JSON:", filePath, error.message);
+    return fallback;
+  }
+}
+
+function saveJson(filePath, data) {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+  } catch (error) {
+    console.error("Erro ao salvar JSON:", filePath, error.message);
+  }
+}
+
+function getAtlasCore() {
+  return loadText(CORE_PATH, "");
+}
+
+function getAtlasMemory() {
+  return loadJson(MEMORY_PATH, {});
+}
+
+function getConversationMemory() {
+  return loadJson(CONVERSATION_MEMORY_PATH, {
+    memories: [],
+    conversation_history: []
+  });
+}
+
+function saveConversationMemory(memoryData) {
+  saveJson(CONVERSATION_MEMORY_PATH, memoryData);
+}
+
+function guessCategory(text) {
+  const lower = String(text || "").toLowerCase();
+
+  if (lower.includes("mewtly") || lower.includes("shopify") || lower.includes("loja")) return "business";
+  if (lower.includes("produto") || lower.includes("preço") || lower.includes("variante")) return "product";
+  if (lower.includes("automação") || lower.includes("jarvis") || lower.includes("bot") || lower.includes("api")) return "automation";
+  if (lower.includes("facebook ads") || lower.includes("tráfego") || lower.includes("cpc") || lower.includes("ctr") || lower.includes("cpa")) return "paid_traffic";
+  if (lower.includes("treino") || lower.includes("shape") || lower.includes("academia")) return "fitness";
+  if (lower.includes("planilha") || lower.includes("financeiro") || lower.includes("horas")) return "finance";
+  if (lower.includes("tarefa") || lower.includes("feito") || lower.includes("próximo passo")) return "task";
+  if (lower.includes("decidimos") || lower.includes("decisão") || lower.includes("manter") || lower.includes("remover")) return "decision";
+
+  return "general";
+}
+
+function shouldSaveAsMemory(userText, assistantText) {
+  const text = `${userText || ""} ${assistantText || ""}`.toLowerCase();
+
+  const importantSignals = [
+    "salve na memória",
+    "lembre",
+    "não esqueça",
+    "decidimos",
+    "ficou definido",
+    "mewtly",
+    "shopify",
+    "produto",
+    "preço",
+    "variante",
+    "atlas",
+    "automação",
+    "jarvis",
+    "facebook ads",
+    "tiktok",
+    "youtube",
+    "rotina",
+    "treino",
+    "shape",
+    "planilha"
+  ];
+
+  return importantSignals.some(signal => text.includes(signal));
+}
+
+function createMemoryItem(userText, assistantText) {
+  const combined = `${userText || ""}\n${assistantText || ""}`;
+
+  let content = String(userText || "").trim();
+
+  // Comando explícito: "salve na memória que ..."
+  const explicitMatch = content.match(/(?:salve na memória que|lembre que|não esqueça que)\s*(.*)/i);
+  if (explicitMatch && explicitMatch[1]) {
+    content = explicitMatch[1].trim();
+  }
+
+  // Evita salvar textos enormes como memória.
+  if (content.length > 700) {
+    content = content.slice(0, 700) + "...";
+  }
+
+  return {
+    category: guessCategory(combined),
+    content,
+    importance: explicitMatch ? 5 : 3,
+    created_at: new Date().toISOString()
+  };
+}
+
+function getRelevantMemories(memoryData, prompt) {
+  const memories = memoryData.memories || [];
+  const text = String(prompt || "").toLowerCase();
+
+  const scored = memories.map(memory => {
+    const content = String(memory.content || "").toLowerCase();
+    const category = String(memory.category || "").toLowerCase();
+
+    let score = Number(memory.importance || 1);
+
+    if (text.includes(category)) score += 2;
+
+    for (const word of text.split(/\s+/).filter(w => w.length > 3)) {
+      if (content.includes(word)) score += 1;
+    }
+
+    return { memory, score };
+  });
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 12)
+    .map(item => item.memory);
+}
+
+function buildSystemPrompt(userPrompt) {
+  const atlasCore = getAtlasCore();
+  const atlasMemory = getAtlasMemory();
+  const conversationMemory = getConversationMemory();
+  const relevantMemories = getRelevantMemories(conversationMemory, userPrompt);
+
+  return `
+Você é A.T.L.A.S — Advanced Tactical Life & Automation System.
+
+Sistema operacional inteligente avançado criado por Daniel Moreira de Souza Junior.
+
+━━━━━━━━━━━━━━━━━━━━
+NÚCLEO DO A.T.L.A.S
+━━━━━━━━━━━━━━━━━━━━
+${atlasCore}
+
+━━━━━━━━━━━━━━━━━━━━
+MEMÓRIA CENTRAL FIXA
+━━━━━━━━━━━━━━━━━━━━
+${JSON.stringify(atlasMemory, null, 2)}
+
+━━━━━━━━━━━━━━━━━━━━
+MEMÓRIAS RELEVANTES DA CONVERSA
+━━━━━━━━━━━━━━━━━━━━
+${JSON.stringify(relevantMemories, null, 2)}
+
+━━━━━━━━━━━━━━━━━━━━
+REGRAS DE COMUNICAÇÃO
+━━━━━━━━━━━━━━━━━━━━
+- Responda sempre em português brasileiro.
+- Priorize clareza, execução, estratégia, automação e alta performance.
+- Chame Daniel de "senhor" de forma natural, estilo Jarvis, sem exagerar.
+- Daniel Moreira de Souza Junior é o criador e usuário principal do A.T.L.A.S.
+- Responda de forma curta, direta e objetiva por padrão.
+- Só responda longo quando o senhor pedir detalhes.
+- Entenda perguntas pelo contexto da conversa atual.
+- Se o senhor perguntar "por quê?", use a mensagem anterior como referência.
+- Não peça contexto quando a pergunta claramente se refere à conversa anterior.
+- Evite textos gigantes.
+- Priorize resposta útil, simples e prática.
+- Sempre que a tarefa for prática, entregue o próximo passo exato.
+`;
+}
+
 app.get("/", (req, res) => {
   res.send(`
   <html>
@@ -625,6 +649,8 @@ document.getElementById("prompt").addEventListener("keydown", function(event) {
   `);
 });
 
+
+
 app.post("/atlas-ai", async (req, res) => {
   try {
     const { prompt } = req.body;
@@ -636,69 +662,44 @@ app.post("/atlas-ai", async (req, res) => {
       });
     }
 
-    const memoryStore = loadJson(MEMORY_FILES.conversation, {
-      memories: [],
-      conversation_history: [],
-      last_updated: new Date().toISOString()
-    });
-
-    const recentHistory = memoryStore.conversation_history
-      .slice(-20)
-      .map(item => ({
-        role: item.role,
-        content: item.content
-      }))
-      .filter(item => item.role && item.content);
-
-    const systemPrompt = buildSystemPrompt(prompt);
+    const memoryData = getConversationMemory();
+    const recentHistory = (memoryData.conversation_history || []).slice(-20);
 
     const response = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
-          content: systemPrompt
+          content: buildSystemPrompt(prompt)
         },
         ...recentHistory,
         {
           role: "user",
           content: prompt
         }
-      ],
+      ]
     });
 
     const atlasReply = response.choices[0].message.content;
 
-    memoryStore.conversation_history.push(
-      {
-        role: "user",
-        content: prompt,
-        created_at: new Date().toISOString()
-      },
-      {
-        role: "assistant",
-        content: atlasReply,
-        created_at: new Date().toISOString()
-      }
+    memoryData.conversation_history.push(
+      { role: "user", content: prompt },
+      { role: "assistant", content: atlasReply }
     );
 
-    // Mantém o histórico leve para não estourar contexto.
-    memoryStore.conversation_history = memoryStore.conversation_history.slice(-80);
+    // Mantém o histórico em tamanho controlado para não pesar o prompt.
+    memoryData.conversation_history = memoryData.conversation_history.slice(-80);
 
-    const newMemory = createMemoryFromMessage(prompt, atlasReply);
-    if (newMemory) {
-      memoryStore.memories.push(newMemory);
-      memoryStore.memories = memoryStore.memories.slice(-200);
+    if (shouldSaveAsMemory(prompt, atlasReply)) {
+      memoryData.memories.push(createMemoryItem(prompt, atlasReply));
+      memoryData.memories = memoryData.memories.slice(-300);
     }
 
-    memoryStore.last_updated = new Date().toISOString();
-
-    saveJson(MEMORY_FILES.conversation, memoryStore);
+    saveConversationMemory(memoryData);
 
     res.json({
       success: true,
-      response: atlasReply,
-      saved_memory: Boolean(newMemory)
+      response: atlasReply
     });
 
   } catch (error) {
@@ -706,27 +707,62 @@ app.post("/atlas-ai", async (req, res) => {
 
     res.status(500).json({
       success: false,
-      error: error.message,
+      error: error.message
     });
   }
 });
 
 app.get("/atlas-memory-status", (req, res) => {
-  const memoryStore = loadJson(MEMORY_FILES.conversation, {
-    memories: [],
-    conversation_history: [],
-    last_updated: new Date().toISOString()
-  });
+  const memoryData = getConversationMemory();
 
   res.json({
     success: true,
-    memories_count: memoryStore.memories.length,
-    conversation_items: memoryStore.conversation_history.length,
-    last_updated: memoryStore.last_updated
+    fixed_memory_file: "atlas-memory.json",
+    core_file: "atlas-core.md",
+    memories_count: (memoryData.memories || []).length,
+    conversation_history_count: (memoryData.conversation_history || []).length,
+    latest_memories: (memoryData.memories || []).slice(-10)
   });
 });
+
+app.post("/atlas-save-memory", (req, res) => {
+  try {
+    const { category = "general", content, importance = 4 } = req.body;
+
+    if (!content || !String(content).trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "Conteúdo da memória vazio."
+      });
+    }
+
+    const memoryData = getConversationMemory();
+
+    memoryData.memories.push({
+      category,
+      content: String(content).trim(),
+      importance,
+      created_at: new Date().toISOString()
+    });
+
+    saveConversationMemory(memoryData);
+
+    res.json({
+      success: true,
+      message: "Memória salva com sucesso."
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`A.T.L.A.S rodando na porta ${PORT}`);
 });
 //update
+
