@@ -243,14 +243,7 @@ transition:0.3s;
 ACCESS A.T.L.A.S
 </button>
 
-<div id="loginError" style="
-margin-top:15px;
-color:#ff6b6b;
-font-size:13px;
-display:none;
-">
-ACCESS DENIED
-</div>
+<div id="loginError" style="margin-top:15px;color:#ff6b6b;font-size:13px;display:none;">ACCESS DENIED</div>
 
 </div>
 </div>
